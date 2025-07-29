@@ -15,9 +15,9 @@ import {
   TextArea,
   Tooltip,
 } from '@patternfly/react-core';
-import { CogIcon, CubesIcon, ExclamationCircleIcon, SyncIcon } from '@patternfly/react-icons';
+import { CubesIcon, ExclamationCircleIcon, SyncIcon } from '@patternfly/react-icons';
 import * as React from 'react';
-import { TFunction, useTranslation } from 'react-i18next';
+import { TFunction, Trans, useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocationQuery } from '../hooks/useLocationQuery';
 import { usePluginAvailable } from '../hooks/usePluginAvailable';
@@ -29,6 +29,7 @@ import * as korrel8r from '../korrel8r/types';
 import { defaultSearch, Search, SearchType, setPersistedSearch } from '../redux-actions';
 import { State } from '../redux-reducers';
 import * as time from '../time';
+import { HelpPopover as FieldLevelHelp } from './HelpPopover';
 import './korrel8rpanel.css';
 import { SearchFormGroup } from './SearchFormGroup';
 import TimeRangeFormGroup from './TimeRangeFormGroup';
@@ -72,7 +73,7 @@ export default function Korrel8rPanel() {
   const [result, setResult] = React.useState<Result | null>(null);
   const [showQuery, setShowQuery] = React.useState(false);
 
-  const focusTip = t('Create a graph starting from resources in the current view.');
+  const focusTip = t('Create a graph of correlated items from resources in the current view.');
   const cannotFocus = t('The current view does not support correlation.');
 
   React.useEffect(() => {
@@ -127,11 +128,25 @@ export default function Korrel8rPanel() {
         newSearch.constraint = new korrel8r.Constraint({ ...newSearch.constraint, start, end });
       }
       newSearch.depth = depthBounds(newSearch.depth);
-      newSearch.type = !newSearch.goal ? SearchType.Neighbour : newSearch.type;
+      newSearch.type = !newSearch.goal ? SearchType.Distance : newSearch.type;
       setSearch(newSearch);
       setResult(null);
     },
     [setResult, depthBounds],
+  );
+
+  const queryHelp = (
+    <>
+      {t('Query')}
+      <FieldLevelHelp header={t('Query')}>
+        <Trans t={t}>
+          <p>
+            Selects the starting point for correlation search. The query is set by the
+            <code>Focus</code> button or you can edit it manually.
+          </p>
+        </Trans>
+      </FieldLevelHelp>
+    </>
   );
 
   return (
@@ -154,24 +169,18 @@ export default function Korrel8rPanel() {
         </Tooltip>
 
         <Flex align={{ default: 'alignRight' }}>
-          <Tooltip content={t('Open graph query settings.')}>
-            <ExpandableSectionToggle
-              contentId={queryContentID}
-              toggleId={queryToggleID}
-              isExpanded={showQuery}
-              onToggle={(on: boolean) => {
-                setShowQuery(on);
-              }}
-            >
-              <CogIcon />
-            </ExpandableSectionToggle>
-          </Tooltip>
-          <Tooltip content={t('Refresh graph from current settings')}>
-            <Button
-              isAriaDisabled={!search?.queryStr}
-              onClick={() => runSearch(search)}
-              variant="secondary"
-            >
+          <ExpandableSectionToggle
+            contentId={queryContentID}
+            toggleId={queryToggleID}
+            isExpanded={showQuery}
+            onToggle={(on: boolean) => {
+              setShowQuery(on);
+            }}
+          >
+            {t('Advanced')}
+          </ExpandableSectionToggle>
+          <Tooltip content={t('Refresh the graph using the current settings')}>
+            <Button isAriaDisabled={!search?.queryStr} onClick={() => runSearch(search)}>
               <SyncIcon />
             </Button>
           </Tooltip>
@@ -188,11 +197,11 @@ export default function Korrel8rPanel() {
         isIndented
       >
         <Form>
-          {/* FIXME Rename */}
           <TimeRangeFormGroup
-            label={t('Time Range')}
+            label={t('Time')}
             period={search.period}
             onChange={(period: time.Period): void => setSearch({ ...search, period })}
+            t={t}
           />
           <SearchFormGroup
             label={t('Search Type')}
@@ -202,15 +211,19 @@ export default function Korrel8rPanel() {
             maxDepth={100}
             t={t}
           />
-          <FormGroup label={t('Query')} className="tp-plugin__panel-query-input">
-            <Tooltip content={t('Query selecting start resources for correlation.')}>
-              <TextArea
-                value={search.queryStr}
-                onChange={(_event, value) => setSearch({ ...search, queryStr: value })}
-                placeholder="domain:class:selector"
-                id={queryInputID}
-              />
-            </Tooltip>
+          <FormGroup className="tp-plugin__panel-query-input" label={queryHelp}>
+            <TextArea
+              value={search.queryStr}
+              onChange={(_event, value) => setSearch({ ...search, queryStr: value })}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  runSearch(search);
+                }
+              }}
+              placeholder="domain:class:selector (shift-enter for new line)"
+              id={queryInputID}
+            />
           </FormGroup>
         </Form>
       </ExpandableSection>

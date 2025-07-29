@@ -1,17 +1,19 @@
 import {
-  Flex,
-  FlexItem,
+  DescriptionList,
+  DescriptionListDescription,
+  DescriptionListGroup,
+  DescriptionListTerm,
   FormGroup,
   InputGroup,
   InputGroupItem,
-  InputGroupText,
   NumberInput,
   TextInput,
 } from '@patternfly/react-core';
 import * as React from 'react';
-import { TFunction } from 'react-i18next';
+import { TFunction, Trans } from 'react-i18next';
 import { Search, SearchType } from '../redux-actions';
 import { Chooser } from './Chooser';
+import { HelpPopover } from './HelpPopover';
 
 export interface SearchFormGroupProps {
   search: Search;
@@ -36,14 +38,12 @@ export const SearchFormGroup: React.FC<SearchFormGroupProps> = ({
       onChange={(id: string) => onChange({ ...search, type: id as SearchType })}
       items={[
         {
-          id: SearchType.Neighbour,
-          label: t('Neighbourhood'),
-          tooltip: t('Find neighbours by traversing up to the specified depth.'),
+          id: SearchType.Distance,
+          label: t('Distance'),
         },
         {
           id: SearchType.Goal,
-          label: t('Goal Search'),
-          tooltip: t('Find all paths to the goal class.'),
+          label: t('Goal Class'),
         },
       ]}
     />
@@ -53,9 +53,8 @@ export const SearchFormGroup: React.FC<SearchFormGroupProps> = ({
     if (n) onChange({ ...search, depth: Math.min(maxDepth, Math.max(minDepth, n)) });
   };
 
-  const neighbourInput = (
+  const distanceInput = (
     <InputGroup>
-      <InputGroupText isPlain>{t('Depth')}</InputGroupText>
       <InputGroupItem>
         <NumberInput
           value={search.depth}
@@ -71,27 +70,46 @@ export const SearchFormGroup: React.FC<SearchFormGroupProps> = ({
 
   const goalInput = (
     <InputGroup>
-      <InputGroupText isPlain>{t('Goal class for search:')}</InputGroupText>
       <InputGroupItem>
         <TextInput
           value={search.goal}
-          placeholder="domain:class"
+          placeholder="domain:classname"
           onChange={(e) => onChange({ ...search, goal: (e.target as HTMLInputElement).value })}
         />
       </InputGroupItem>
     </InputGroup>
   );
 
+  const help = (
+    <HelpPopover header={label}>
+      <Trans t={t}>
+        <DescriptionList>
+          <DescriptionListGroup>
+            <DescriptionListTerm>Distance</DescriptionListTerm>
+            <DescriptionListDescription>
+              Find all related items up to the specified distance.
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+          <DescriptionListGroup>
+            <DescriptionListTerm>Goal Class</DescriptionListTerm>
+            <DescriptionListDescription>
+              Find all paths to items of the specified goal class.
+            </DescriptionListDescription>
+          </DescriptionListGroup>
+        </DescriptionList>
+      </Trans>
+    </HelpPopover>
+  );
+
   return (
     <FormGroup
-      label={
-        <Flex direction={{ default: 'row' }}>
-          <FlexItem>{label}</FlexItem>
-          {chooser}
-        </Flex>
-      }
+      label=<>
+        {label}
+        {help}
+      </>
     >
-      {search.type == SearchType.Neighbour ? neighbourInput : goalInput}
+      {chooser}
+      {search.type == SearchType.Distance ? distanceInput : goalInput}
     </FormGroup>
   );
 };
