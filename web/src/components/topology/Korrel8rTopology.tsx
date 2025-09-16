@@ -11,6 +11,7 @@ import {
   DefaultEdge,
   DefaultGroup,
   DefaultNode,
+  Edge,
   EdgeStyle,
   ElementModel,
   Graph,
@@ -92,6 +93,21 @@ const Korrel8rTopologyNode: React.FC<
   return topologyNode;
 };
 
+interface Korrel8rTopologyEdgeProps {
+  element: Edge;
+}
+
+const Korrel8rTopologyEdge: React.FC<Korrel8rTopologyEdgeProps> = ({ element }) => {
+  const edge: korrel8r.Edge = element.getData();
+  console.debug('FIXME korrel8r', element.getId(), edge, edge?.rules);
+  const rules = edge?.rules?.map((rule) => rule.name).join('\n') || 'No Rules';
+  return (
+    <DefaultEdge element={element}>
+      <title>{rules}</title>
+    </DefaultEdge>
+  );
+};
+
 const NODE_SHAPE = NodeShape.ellipse;
 const NODE_DIAMETER = 75;
 const PADDING = 30;
@@ -140,6 +156,7 @@ export const Korrel8rTopology: React.FC<{
           source: edge.start.id,
           target: edge.goal.id,
           edgeStyle: EdgeStyle.default,
+          data: edge,
         };
       }),
     [graph],
@@ -218,7 +235,7 @@ export const Korrel8rTopology: React.FC<{
         case ModelKind.node:
           return withContextMenu(nodeMenu)(withSelection()(Korrel8rTopologyNode));
         case ModelKind.edge:
-          return DefaultEdge;
+          return Korrel8rTopologyEdge;
         default:
           return undefined;
       }
