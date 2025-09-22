@@ -152,94 +152,111 @@ export default function Korrel8rPanel() {
     </>
   );
 
+  const focusButton = (
+    <Tooltip content={locationQuery ? focusTip : cannotFocus}>
+      <Button
+        isAriaDisabled={!locationQuery}
+        onClick={() =>
+          runSearch({
+            ...defaultSearch,
+            queryStr: locationQuery?.toString(),
+            constraint: searchResult?.search?.constraint,
+            period: searchResult?.search?.period,
+          })
+        }
+      >
+        {t('Focus')}
+      </Button>
+    </Tooltip>
+  );
+
+  const advancedToggle = (
+    <ExpandableSectionToggle
+      contentId={queryContentID}
+      toggleId={queryToggleID}
+      isExpanded={showQuery}
+      onToggle={(on: boolean) => {
+        setShowQuery(on);
+      }}
+    >
+      {t('Advanced')}
+    </ExpandableSectionToggle>
+  );
+
+  const refreshButton = (
+    <Tooltip content={t('Refresh the graph using the current settings')}>
+      <Button isAriaDisabled={!search?.queryStr} onClick={() => runSearch(search)}>
+        <SyncIcon />
+      </Button>
+    </Tooltip>
+  );
+
+  const advancedSection = (
+    <ExpandableSection
+      className="tp-plugin__panel-query-container"
+      contentId={queryContentID}
+      toggleId={queryToggleID}
+      isExpanded={showQuery}
+      isDetached
+      isIndented
+    >
+      <Form>
+        <TimeRangeFormGroup
+          label={t('Time')}
+          period={search.period}
+          onChange={(period: time.Period): void => setSearch({ ...search, period })}
+          t={t}
+        />
+        <SearchFormGroup
+          label={t('Search Type')}
+          search={search}
+          onChange={(s: Search) => setSearch(s)}
+          minDepth={1}
+          maxDepth={100}
+          t={t}
+        />
+        <FormGroup className="tp-plugin__panel-query-input" label={queryHelp}>
+          <TextArea
+            value={search.queryStr}
+            onChange={(_event, value) => setSearch({ ...search, queryStr: value })}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                runSearch(search);
+              }
+            }}
+            placeholder="domain:class:selector (shift-enter for new line)"
+            id={queryInputID}
+          />
+        </FormGroup>
+      </Form>
+    </ExpandableSection>
+  );
+
+  const topologySection = (
+    <Topology
+      domains={domains}
+      result={result}
+      constraint={search.constraint}
+      t={t}
+      setSearch={setSearch}
+    />
+  );
+
   return (
     <>
-      <Flex className="tp-plugin__panel-query-container">
-        <Tooltip content={locationQuery ? focusTip : cannotFocus}>
-          <Button
-            isAriaDisabled={!locationQuery}
-            onClick={() =>
-              runSearch({
-                ...defaultSearch,
-                queryStr: locationQuery?.toString(),
-                constraint: searchResult?.search?.constraint,
-                period: searchResult?.search?.period,
-              })
-            }
-          >
-            {t('Focus')}
-          </Button>
-        </Tooltip>
-
-        <Flex align={{ default: 'alignRight' }}>
-          <ExpandableSectionToggle
-            contentId={queryContentID}
-            toggleId={queryToggleID}
-            isExpanded={showQuery}
-            onToggle={(on: boolean) => {
-              setShowQuery(on);
-            }}
-          >
-            {t('Advanced')}
-          </ExpandableSectionToggle>
-          <Tooltip content={t('Refresh the graph using the current settings')}>
-            <Button isAriaDisabled={!search?.queryStr} onClick={() => runSearch(search)}>
-              <SyncIcon />
-            </Button>
-          </Tooltip>
+      <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+        <Flex className="tp-plugin__panel-query-container" direction={{ default: 'row' }}>
+          {focusButton}
+          <FlexItem align={{ default: 'alignRight' }}>{advancedToggle}</FlexItem>
+          {refreshButton}
         </Flex>
+        <FlexItem>{advancedSection}</FlexItem>
+        <Divider />
+        <FlexItem className="tp-plugin__panel-topology-container" grow={{ default: 'grow' }}>
+          {topologySection}
+        </FlexItem>
       </Flex>
-
-      {/* Expandable settings */}
-      <ExpandableSection
-        className="tp-plugin__panel-query-container"
-        contentId={queryContentID}
-        toggleId={queryToggleID}
-        isExpanded={showQuery}
-        isDetached
-        isIndented
-      >
-        <Form>
-          <TimeRangeFormGroup
-            label={t('Time')}
-            period={search.period}
-            onChange={(period: time.Period): void => setSearch({ ...search, period })}
-            t={t}
-          />
-          <SearchFormGroup
-            label={t('Search Type')}
-            search={search}
-            onChange={(s: Search) => setSearch(s)}
-            minDepth={1}
-            maxDepth={100}
-            t={t}
-          />
-          <FormGroup className="tp-plugin__panel-query-input" label={queryHelp}>
-            <TextArea
-              value={search.queryStr}
-              onChange={(_event, value) => setSearch({ ...search, queryStr: value })}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
-                  runSearch(search);
-                }
-              }}
-              placeholder="domain:class:selector (shift-enter for new line)"
-              id={queryInputID}
-            />
-          </FormGroup>
-        </Form>
-      </ExpandableSection>
-      <Divider />
-      <FlexItem className="tp-plugin__panel-topology-container" grow={{ default: 'grow' }}>
-        <Topology
-          domains={domains}
-          result={result}
-          constraint={search.constraint}
-          t={t}
-          setSearch={setSearch}
-        />
-      </FlexItem>
     </>
   );
 }
