@@ -292,6 +292,14 @@ export class QueryCount {
     }
   }
 
+  equals(other: QueryCount) {
+    return (
+      this.count === other.count &&
+      this.query?.toString() == other.query?.toString() &&
+      this.error?.toString() == other.error?.toString()
+    );
+  }
+
   /** Highest count first, errors last */
   static compare(a: QueryCount, b: QueryCount): number {
     let d = (b.error ? 1 : 0) - (a.error ? 1 : 0);
@@ -324,21 +332,26 @@ export class Graph {
   nodes: Array<Node>;
   edges: Array<Edge>;
 
-  private nodeByClass: Map<string, Node>;
+  private nodesByID: Map<string, Node>;
+  private edgesByGoal: Map<string, Edge>;
 
   constructor(graph: api.Graph) {
-    this.nodeByClass = new Map();
-    this.nodes = (graph?.nodes ?? []).map((n) => {
-      const node = new Node(n);
-      this.nodeByClass[n.class] = node;
-      return node;
-    });
+    this.nodes = (graph?.nodes ?? []).map((n) => new Node(n));
+    this.nodesByID = new Map(this.nodes.map((n) => [n.id, n]));
     this.edges = (graph?.edges ?? [])
       .map((e) => new Edge(this.node(e.start), this.node(e.goal), Rule.array(e.rules)))
       .filter((e) => e.start && e.goal);
+    this.edgesByGoal = new Map(this.edges.map((e) => [e.goal.class.toString(), e]));
   }
 
+  // Return the node or undefined. ID is the node's full class string.
   node(id: string): Node {
-    return this.nodeByClass[id];
+    return this.nodesByID.get(id);
+  }
+
+  // Return the rule that generated a given query count or undefined if not found.
+  findRule(qc: QueryCount): Rule | undefined {
+    const edge = this.edgesByGoal.get(qc?.query?.class?.toString());
+    return edge?.rules?.find((r: Rule) => r.queries.find((q: QueryCount) => q.equals(qc)));
   }
 }
