@@ -21,7 +21,7 @@ export const getNeighborsGraph = (neighbours: Neighbours) => {
     BASE: KORREL8R_ENDPOINT,
   });
 
-  return korrel8rClient.default.postGraphsNeighbours(neighbours);
+  return korrel8rClient.default.postGraphsNeighbours(neighbours, true);
 };
 
 export const getGoalsGraph = (goals: Goals) => {
@@ -33,5 +33,5 @@ export const getGoalsGraph = (goals: Goals) => {
     BASE: KORREL8R_ENDPOINT,
   });
 
-  return korrel8rClient.default.postGraphsGoals(goals);
+  return korrel8rClient.default.postGraphsGoals(goals, true);
 };

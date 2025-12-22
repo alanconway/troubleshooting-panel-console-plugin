@@ -1,4 +1,4 @@
-import { Badge, Title } from '@patternfly/react-core';
+import { Badge, ClipboardCopy, Label, Title } from '@patternfly/react-core';
 import {
   action,
   BadgeLocation,
@@ -185,21 +185,28 @@ export const Korrel8rTopology: React.FC<{
           <Title headingLevel="h4">{node.class.toString()}</Title>
         </ContextMenuItem>,
       ];
-      nodeQueries(node).forEach((qc) =>
+      nodeQueries(node).forEach((qc) => {
+        const rule = graph.findRule(qc)
         menu.push(
           <ContextMenuItem
             key={qc.query.toString()}
             onClick={() => {
               navigateToQuery(qc.query, constraint);
               setSelectedIds([node.id]);
-              navigator.clipboard.writeText(qc.query.toString());
             }}
-            icon={<Badge>{`${qc.count} `}</Badge>}
+            icon={<Badge>{`${qc.count}`}</Badge>}
           >
-            {`${qc.query.selector} `}
-          </ContextMenuItem>,
-        ),
-      );
+            {rule && <Label isCompact>{rule.name}</Label>}
+            <ClipboardCopy
+              isReadOnly hoverTip="Copy query" clickTip="Copied" variant='inline-compact'
+              // On copy, save the entire query, not just the selector.
+              onCopy={() => { navigator.clipboard.writeText(qc.query.toString()); }}
+            >
+              {qc.query.selector}
+            </ClipboardCopy>
+          </ContextMenuItem >
+        )
+      })
       return menu;
     },
     [navigateToQuery, setSelectedIds, constraint],
