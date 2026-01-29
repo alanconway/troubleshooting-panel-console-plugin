@@ -31,7 +31,7 @@ import { KubernetesIcon } from './KubernetesIcon';
 export type IconType = React.ReactElement | React.Component;
 export type IconMap = { [key: string]: IconType };
 
-const props = { width: 25, height: 25, color: '#393F44' }
+const props = { width: 25, height: 25 };
 
 const fa = (icon: IconDefinition): IconType => <FontAwesomeIcon icon={icon} {...props} />;
 
