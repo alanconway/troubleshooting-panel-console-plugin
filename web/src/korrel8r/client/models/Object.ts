@@ -3,6 +3,6 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Store is a map string keys and values used to connect to a store.
+ * Data object serialized as JSON.
  */
-export type Store = Record<string, string>;
+export type Object = Record<string, any>;

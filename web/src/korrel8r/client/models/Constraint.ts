@@ -2,25 +2,26 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Duration } from './Duration';
 /**
- * Constraint constrains the objects that will be included in search results.
+ * Constrains the objects that will be included in search results.
  */
 export type Constraint = {
   /**
-   * End of time interval, quoted RFC 3339 format.
+   * Ignore objects with timestamps before this start time.
    */
-  end?: string | null;
+  start?: string;
   /**
-   * Limit number of objects returned per query, <=0 means no limit.
+   * Ignore objects with timestamps after this end time.
+   */
+  end?: string;
+  /**
+   * Limit total number of objects per query.
    */
   limit?: number;
   /**
-   * Start of time interval, quoted RFC 3339 format.
+   * DEPRECATED store calls are cancelled with the request.
    */
-  start?: string | null;
-  /**
-   * Timeout per request, h/m/s/ms/ns format
-   */
-  timeout?: string;
+  timeout?: Duration;
 };
 

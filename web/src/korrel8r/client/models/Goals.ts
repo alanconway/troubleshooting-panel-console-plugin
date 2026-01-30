@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Class } from './Class';
 import type { Start } from './Start';
 /**
  * Starting point for a goals search.
@@ -10,7 +11,7 @@ export type Goals = {
   /**
    * Goal classes for correlation.
    */
-  goals?: Array<string>;
-  start?: Start;
+  goals: Array<Class>;
+  start: Start;
 };
 

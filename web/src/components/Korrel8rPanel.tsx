@@ -21,11 +21,10 @@ import { CubesIcon, ExclamationCircleIcon, SyncIcon } from '@patternfly/react-ic
 import * as React from 'react';
 import { TFunction, Trans, useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
+import { useDomains } from '../hooks/useDomains';
 import { useLocationQuery } from '../hooks/useLocationQuery';
 import { usePluginAvailable } from '../hooks/usePluginAvailable';
 import { getGoalsGraph, getNeighborsGraph } from '../korrel8r-client';
-import { AlertDomain } from '../korrel8r/alert';
-import { allDomains } from '../korrel8r/all-domains';
 import * as api from '../korrel8r/client';
 import * as korrel8r from '../korrel8r/types';
 import {
@@ -51,16 +50,8 @@ export default function Korrel8rPanel() {
   });
   const dispatch = useDispatch();
 
-  const alertRules = useSelector((state: State) => state.observe?.get('rules'));
-  const alertIDs = React.useMemo(() => {
-    if (!alertRules) return new Map<string, string>();
-    return new Map<string, string>(alertRules.map(({ id, name }) => [id, name]));
-  }, [alertRules]);
-  const domains = React.useMemo(
-    () => new korrel8r.Domains(...allDomains, new AlertDomain(alertIDs)),
-    [alertIDs],
-  );
-  const locationQuery = useLocationQuery(domains);
+  const domains = useDomains();
+  const locationQuery = useLocationQuery();
 
   // Search parameters.
   const [search, setSearch] = React.useState<Search>({
@@ -73,9 +64,8 @@ export default function Korrel8rPanel() {
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
+  // Call korrel8r REST API to search
   React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.debug('korrel8r search', search);
     const queryStr = search?.queryStr?.trim();
     const start: api.Start = {
       queries: queryStr ? [queryStr] : undefined,
@@ -87,8 +77,6 @@ export default function Korrel8rPanel() {
         setResult(newResult);
         dispatch(setPersistedSearch({ search, result: newResult }));
       }
-      // eslint-disable-next-line no-console
-      console.debug('korrel8r result', newResult, 'cancelled', cancelled);
     };
     const fetch =
       search.type === SearchType.Goal

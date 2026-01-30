@@ -10,7 +10,11 @@ export type Domain = {
   /**
    * Name of the domain.
    */
-  name?: string;
+  name: string;
+  /**
+   * Brief description of the domain.
+   */
+  description?: string;
   /**
    * Stores configured for the domain.
    */

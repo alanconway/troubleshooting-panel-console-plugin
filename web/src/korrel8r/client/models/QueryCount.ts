@@ -2,17 +2,18 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Query } from './Query';
 /**
- * Query run during a correlation with a count of results found.
+ * Query with number of results.
  */
 export type QueryCount = {
   /**
-   * Count of results or -1 if the query was not executed.
+   * Number of results, omitted if the query was not executed.
    */
   count?: number;
   /**
    * Query for correlation data.
    */
-  query?: string;
+  query: Query;
 };
 

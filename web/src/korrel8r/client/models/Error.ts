@@ -3,6 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Store is a map string keys and values used to connect to a store.
+ * Error result containing an error message.
  */
-export type Store = Record<string, string>;
+export type Error = {
+  /**
+   * Error message.
+   */
+  error: string;
+};
+

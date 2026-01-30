@@ -4,11 +4,12 @@ import * as React from 'react';
 import { useSelector } from 'react-redux';
 import Popover from '../components/Popover';
 import { State } from '../redux-reducers';
+import useKorrel8r from './useKorrel8r';
 
 const usePopover = () => {
   const isOpen = useSelector((state: State) => state.plugins?.tp?.get('isOpen'));
-
   const launchModal = useModal();
+  useKorrel8r();
 
   React.useEffect(() => {
     if (launchModal && isOpen) {

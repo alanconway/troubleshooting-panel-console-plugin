@@ -2,23 +2,29 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Class } from './Class';
 import type { Constraint } from './Constraint';
+import type { Object } from './Object';
+import type { Query } from './Query';
 /**
  * Start identifies a set of starting objects for correlation.
  */
 export type Start = {
   /**
-   * Class for `objects`
+   * Class of starting objects and queries.
    */
-  class?: string;
+  class?: Class;
+  /**
+   * Constrain the objects that will be returned.
+   */
   constraint?: Constraint;
   /**
-   * Objects of `class` serialized as JSON
+   * Start objects serialized as JSON.
    */
-  objects?: any;
+  objects?: Array<Object>;
   /**
    * Queries for starting objects
    */
-  queries?: Array<string>;
+  queries?: Array<Query>;
 };
 

@@ -4,13 +4,13 @@
 /* eslint-disable */
 import type { Start } from './Start';
 /**
- * Starting point for a neighbours search.
+ * Starting point for a neighbors search.
  */
-export type Neighbours = {
+export type Neighbors = {
   /**
-   * Max depth of neighbours graph.
+   * Max depth of neighbors graph.
    */
-  depth?: number;
-  start?: Start;
+  depth: number;
+  start: Start;
 };
 

@@ -10,7 +10,7 @@ export type Rule = {
   /**
    * Name is an optional descriptive name.
    */
-  name?: string;
+  name: string;
   /**
    * Queries generated while following this rule.
    */

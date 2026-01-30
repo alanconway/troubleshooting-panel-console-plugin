@@ -2,22 +2,27 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Object } from './Object';
 import type { QueryCount } from './QueryCount';
 /**
  * Node in the result graph, contains results for a single class.
  */
 export type Node = {
   /**
-   * Class is the full class name in "DOMAIN:CLASS" form.
+   * Full class name
    */
-  class?: string;
-  /**
-   * Count of results found for this class, after de-duplication.
-   */
-  count?: number;
+  class: string;
   /**
    * Queries yielding results for this class.
    */
   queries?: Array<QueryCount>;
+  /**
+   * Number of results for this class, after de-duplication.
+   */
+  count?: number;
+  /**
+   * Serialized result contents, may be large.
+   */
+  result?: Array<Object>;
 };
 
