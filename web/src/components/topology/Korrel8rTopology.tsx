@@ -33,7 +33,7 @@ import {
 } from '@patternfly/react-topology';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom-v5-compat';
+import { useNavigateToQuery } from '../../hooks/useNavigateToQuery';
 import * as korrel8r from '../../korrel8r/types';
 import { getIcon } from '../icons';
 import './korrel8rtopology.css';
@@ -93,14 +93,13 @@ const NODE_DIAMETER = 75;
 const PADDING = 30;
 
 export const Korrel8rTopology: React.FC<{
-  domains: korrel8r.Domains;
   graph: korrel8r.Graph;
   loggingAvailable: boolean;
   netobserveAvailable: boolean;
   constraint: korrel8r.Constraint;
-}> = ({ domains, graph, loggingAvailable, netobserveAvailable, constraint }) => {
+}> = ({ graph, loggingAvailable, netobserveAvailable, constraint }) => {
   const { t } = useTranslation('plugin__troubleshooting-panel-console-plugin');
-  const navigate = useNavigate();
+  const navigateToQuery = useNavigateToQuery();
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
 
   const nodes = React.useMemo(
@@ -139,31 +138,6 @@ export const Korrel8rTopology: React.FC<{
         };
       }),
     [graph],
-  );
-
-  const navigateToQuery = React.useCallback(
-    (query: korrel8r.Query, constraint: korrel8r.Constraint) => {
-      try {
-        let link = domains.queryToLink(query, constraint)?.toString();
-        if (!link) return;
-        if (!link.startsWith('/')) link = '/' + link;
-        // eslint-disable-next-line no-console
-        console.debug(
-          'korrel8r navigate',
-          '\nquery',
-          query,
-          '\nconstraint',
-          constraint,
-          '\nlink',
-          link,
-        );
-        navigate(link);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error(`korrel8r navigateToQuery: ${e} `, '\nquery', query);
-      }
-    },
-    [navigate, domains],
   );
 
   const selectionAction = React.useCallback(
