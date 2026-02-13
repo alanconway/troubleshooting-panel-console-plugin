@@ -5,6 +5,9 @@ ORG         ?= openshift-observability-ui
 IMAGE       ?= quay.io/${ORG}/troubleshooting-panel-console-plugin:${VERSION}
 TAG         ?= $(VERSION)
 
+.PHONY: all
+all: build-frontend build-backend test-frontend
+
 .PHONY: test
 test: test-frontend
 
