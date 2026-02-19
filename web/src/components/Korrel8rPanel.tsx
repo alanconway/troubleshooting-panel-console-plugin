@@ -27,14 +27,7 @@ import { usePluginAvailable } from '../hooks/usePluginAvailable';
 import { getGoalsGraph, getNeighborsGraph } from '../korrel8r-client';
 import * as api from '../korrel8r/client';
 import * as korrel8r from '../korrel8r/types';
-import {
-  defaultSearch,
-  Result,
-  Search,
-  SearchResult,
-  SearchType,
-  setPersistedSearch,
-} from '../redux-actions';
+import { defaultSearch, Result, Search, SearchType, setResult, setSearch } from '../redux-actions';
 import { State } from '../redux-reducers';
 import * as time from '../time';
 import { HelpPopover as FieldLevelHelp } from './HelpPopover';
@@ -45,26 +38,25 @@ import { Korrel8rTopology } from './topology/Korrel8rTopology';
 
 export default function Korrel8rPanel() {
   const { t } = useTranslation('plugin__troubleshooting-panel-console-plugin');
-  const searchResult: SearchResult = useSelector((state: State) => {
-    return state.plugins?.tp?.get('persistedSearch');
-  });
   const dispatch = useDispatch();
+
+  const search: Search = useSelector((state: State) => state.plugins?.tp?.get('search'));
+  const result: Result | null = useSelector((state: State) => state.plugins?.tp?.get('result'));
 
   const domains = useDomains();
   const locationQuery = useLocationQuery();
 
-  // Search parameters.
-  const [search, setSearch] = React.useState<Search>({
-    ...defaultSearch, // Default search parameters.
-    queryStr: locationQuery?.toString(), // Default query string from location.
-    ...searchResult?.search, // Use persisted search if available.
-  });
-  // Search result
-  const [result, setResult] = React.useState<Result | null>(searchResult?.result ?? null);
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
-  // Call korrel8r REST API to search
+  // On mount: if redux search has no query but locationQuery is available, set initial search.
+  React.useEffect(() => {
+    if (!search?.queryStr && locationQuery) {
+      dispatch(setSearch({ ...defaultSearch, queryStr: locationQuery.toString() }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     const queryStr = search?.queryStr?.trim();
     const start: api.Start = {
@@ -74,8 +66,7 @@ export default function Korrel8rPanel() {
     let cancelled = false; // Detect if returned cleanup function was called.
     const onResult = (newResult: Result) => {
       if (!cancelled) {
-        setResult(newResult);
-        dispatch(setPersistedSearch({ search, result: newResult }));
+        dispatch(setResult(newResult));
       }
     };
     const fetch =
@@ -100,16 +91,18 @@ export default function Korrel8rPanel() {
   const queryContentID = 'query-content';
   const queryInputID = 'query-input';
 
-  const runSearch = React.useCallback((newSearch: Search) => {
-    // Update constraint from time period
-    if (newSearch.period) {
-      const [start, end] = newSearch.period.startEnd();
-      newSearch.constraint = new korrel8r.Constraint({ ...newSearch.constraint, start, end });
-    }
-    newSearch.depth = Math.max(1, Math.min(newSearch.depth, 10));
-    setSearch({ ...newSearch }); // Create a new search object to trigger useEffect
-    setResult(null);
-  }, []);
+  const runSearch = React.useCallback(
+    (newSearch: Search) => {
+      // Update constraint from time period
+      if (newSearch.period) {
+        const [start, end] = newSearch.period.startEnd();
+        newSearch.constraint = new korrel8r.Constraint({ ...newSearch.constraint, start, end });
+      }
+      newSearch.depth = Math.max(1, Math.min(newSearch.depth, 10));
+      dispatch(setSearch({ ...newSearch }));
+    },
+    [dispatch],
+  );
 
   const queryHelp = (
     <>
@@ -141,8 +134,8 @@ export default function Korrel8rPanel() {
           runSearch({
             ...defaultSearch,
             queryStr: locationQuery?.toString(),
-            constraint: searchResult?.search?.constraint,
-            period: searchResult?.search?.period,
+            constraint: search?.constraint,
+            period: search?.period,
           });
         }}
       >
@@ -190,13 +183,15 @@ export default function Korrel8rPanel() {
         <TimeRangeFormGroup
           label={t('Time')}
           period={search.period}
-          onChange={(period: time.Period): void => setSearch({ ...search, period })}
+          onChange={(period: time.Period): void => {
+            dispatch(setSearch({ ...search, period }));
+          }}
           t={t}
         />
         <SearchFormGroup
           label={t('Search Type')}
           search={search}
-          onChange={(s: Search) => setSearch(s)}
+          onChange={(s: Search) => dispatch(setSearch(s))}
           minDepth={1}
           maxDepth={100}
           t={t}
@@ -204,7 +199,7 @@ export default function Korrel8rPanel() {
         <FormGroup className="tp-plugin__panel-query-input" label={queryHelp}>
           <TextArea
             value={search.queryStr}
-            onChange={(_event, value) => setSearch({ ...search, queryStr: value })}
+            onChange={(_event, value) => dispatch(setSearch({ ...search, queryStr: value }))}
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
@@ -225,7 +220,7 @@ export default function Korrel8rPanel() {
       result={result}
       constraint={search.constraint}
       t={t}
-      setSearch={setSearch}
+      setSearch={(s: Search) => dispatch(setSearch(s))}
     />
   );
 

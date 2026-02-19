@@ -1,7 +1,9 @@
 import * as React from 'react';
+import { useDispatch } from 'react-redux';
 import { Console } from 'src/korrel8r/client';
 import { consoleUpdates, setConsole } from '../korrel8r-client';
 import { Query } from '../korrel8r/types';
+import { apiToReduxSearch, setSearch } from '../redux-actions';
 import { useLocationQuery } from './useLocationQuery';
 import { useNavigateToQuery } from './useNavigateToQuery';
 
@@ -16,7 +18,15 @@ const onError = (err: Error | string) => {
 const useKorrel8r = () => {
   const locationQuery = useLocationQuery();
   const navigateToQuery = useNavigateToQuery();
+  const dispatch = useDispatch();
 
+  // Create references for navigateToQuery and dispatch to avoid interrupting the event loop.
+  const navigateToQueryRef = React.useRef(navigateToQuery);
+  React.useEffect(() => { navigateToQueryRef.current = navigateToQuery; }, [navigateToQuery]);
+  const dispatchRef = React.useRef(dispatch);
+  React.useEffect(() => { dispatchRef.current = dispatch; }, [dispatch]);
+
+  // Memoize queryStr, call setConsole on changes.
   const queryStr = React.useMemo(() => {
     return locationQuery?.toString() ?? '';
   }, [locationQuery]);
@@ -27,14 +37,8 @@ const useKorrel8r = () => {
     return () => set.cancel();
   }, [queryStr]);
 
-  // Create a stable reference to navigateToQuery so that the event receiving
-  // effect isn't cancelled when useNavigateToQuery changes.
-  const navigateToQueryRef = React.useRef(navigateToQuery);
-  React.useEffect(() => {
-    navigateToQueryRef.current = navigateToQuery;
-  }, [navigateToQuery]);
 
-  // Listen for console update events and navigate to the new page.
+  // Event loop to receive console update events and navigate to the new page.
   React.useEffect(() => {
     const onMessage = (message: string) => {
       try {
@@ -44,14 +48,14 @@ const useKorrel8r = () => {
           navigateToQueryRef.current(query); // FIXME what about constraint
         }
         if (update.search) {
-          onError(`FIXME search, not executed: ${update.search}`);
+          dispatchRef.current(setSearch(apiToReduxSearch(update.search)));
         }
       } catch (err) {
         onError(`console event: ${err}`);
       }
     };
     return consoleUpdates(onMessage, onError);
-  }, []); // No dependencies, use navigateToQuery by reference
+  }, []); // No dependencies, use refs
 };
 
 export default useKorrel8r;

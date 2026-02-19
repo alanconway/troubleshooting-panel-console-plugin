@@ -1,11 +1,13 @@
 import { action, ActionType as Action } from 'typesafe-actions';
+import { Search as APISearch } from './korrel8r/client';
 import { Constraint, Graph } from './korrel8r/types';
 import { DAY, Duration, Period } from './time';
 
 export enum ActionType {
   CloseTroubleshootingPanel = 'closeTroubleshootingPanel',
   OpenTroubleshootingPanel = 'openTroubleshootingPanel',
-  SetPersistedSearch = 'setPersistedSearch',
+  SetSearch = 'setSearch',
+  SetResult = 'setResult',
 }
 
 export enum SearchType {
@@ -31,12 +33,6 @@ export type Result = {
   isError?: boolean;
 };
 
-// Search parameters and result of the last search.
-export type SearchResult = {
-  search: Search;
-  result?: Result;
-};
-
 // Default search parameters do a neighbourhood search of depth 3.
 export const defaultSearch = {
   type: SearchType.Distance,
@@ -46,13 +42,37 @@ export const defaultSearch = {
 
 export const closeTP = () => action(ActionType.CloseTroubleshootingPanel);
 export const openTP = () => action(ActionType.OpenTroubleshootingPanel);
-export const setPersistedSearch = (searchResult: SearchResult) =>
-  action(ActionType.SetPersistedSearch, searchResult);
+export const setSearch = (search: Search) => action(ActionType.SetSearch, search);
+export const setResult = (result: Result | null) => action(ActionType.SetResult, result);
 
 export const actions = {
   closeTP,
   openTP,
-  setPersistedSearch,
+  setSearch,
+  setResult,
 };
 
 export type TPAction = Action<typeof actions>;
+
+/** Convert an API Search (from SSE messages) to a redux Search for the panel. */
+export function apiToReduxSearch(apiSearch: APISearch): Search {
+  if (apiSearch.neighbors) {
+    const { start, depth } = apiSearch.neighbors;
+    return {
+      type: SearchType.Distance,
+      depth,
+      queryStr: start?.queries?.[0],
+      constraint: start?.constraint ? Constraint.fromAPI(start.constraint) : undefined,
+    };
+  }
+  if (apiSearch.goals) {
+    const { start, goals } = apiSearch.goals;
+    return {
+      type: SearchType.Goal,
+      goal: goals?.[0],
+      queryStr: start?.queries?.[0],
+      constraint: start?.constraint ? Constraint.fromAPI(start.constraint) : undefined,
+    };
+  }
+  return {};
+}
