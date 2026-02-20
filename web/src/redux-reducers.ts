@@ -29,10 +29,10 @@ const reducer = (state: TPState, action: TPAction): TPState => {
       return state.set('isOpen', true);
 
     case ActionType.SetSearch:
-      return state.set('search', action.payload).set('result', null);
+      return state.set('search', { ...action.payload }).set('result', null);
 
     case ActionType.SetResult:
-      return state.set('result', action.payload);
+      return state.set('result', { ...action.payload });
 
     default:
       break;

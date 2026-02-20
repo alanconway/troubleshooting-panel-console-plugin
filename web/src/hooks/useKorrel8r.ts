@@ -1,13 +1,14 @@
 import * as React from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Console } from 'src/korrel8r/client';
 import { consoleUpdates, setConsole } from '../korrel8r-client';
 import { Query } from '../korrel8r/types';
-import { apiToReduxSearch, setSearch } from '../redux-actions';
+import { apiSearch, assignSearch, openTP, Search, setSearch } from '../redux-actions';
+import { State } from '../redux-reducers';
 import { useLocationQuery } from './useLocationQuery';
 import { useNavigateToQuery } from './useNavigateToQuery';
 
-const onError = (err: Error | string) => {
+const consoleError = (err: Error | string) => {
   // eslint-disable-next-line no-console
   console.error(`korrel8r ${err}`);
 };
@@ -19,43 +20,54 @@ const useKorrel8r = () => {
   const locationQuery = useLocationQuery();
   const navigateToQuery = useNavigateToQuery();
   const dispatch = useDispatch();
+  const search: Search = useSelector((state: State) => state.plugins?.tp?.get('search'));
+  const isOpenTP: Search = useSelector((state: State) => state.plugins?.tp?.get('isOpen'));
 
-  // Create references for navigateToQuery and dispatch to avoid interrupting the event loop.
-  const navigateToQueryRef = React.useRef(navigateToQuery);
-  React.useEffect(() => { navigateToQueryRef.current = navigateToQuery; }, [navigateToQuery]);
-  const dispatchRef = React.useRef(dispatch);
-  React.useEffect(() => { dispatchRef.current = dispatch; }, [dispatch]);
-
-  // Memoize queryStr, call setConsole on changes.
   const queryStr = React.useMemo(() => {
     return locationQuery?.toString() ?? '';
   }, [locationQuery]);
 
+  // Call setConsole if queryStr or search changes.
   React.useEffect(() => {
-    const set = setConsole({ view: queryStr });
-    set.catch((err) => onError(`setConsole: ${err}`));
+    const set = setConsole({
+      view: queryStr,
+      search: isOpenTP && search ? apiSearch(search) : undefined,
+    });
+    set.catch((err) => consoleError(`setConsole: ${err}`));
     return () => set.cancel();
-  }, [queryStr]);
+  }, [queryStr, search, isOpenTP]);
 
+  // Create references for navigateToQuery and dispatch to avoid interrupting the event loop.
+  const navigateToQueryRef = React.useRef(navigateToQuery);
+  React.useEffect(() => {
+    navigateToQueryRef.current = navigateToQuery;
+  }, [navigateToQuery]);
+  const searchRef = React.useRef(search);
+  React.useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
 
   // Event loop to receive console update events and navigate to the new page.
   React.useEffect(() => {
+    const onError = (err: Error) => consoleError(`console events: ${err}`);
     const onMessage = (message: string) => {
       try {
-        const update = JSON.parse(message) as Console;
-        if (update.view) {
-          const query = Query.parse(update.view);
+        const event = JSON.parse(message) as Console;
+        if (event.view) {
+          const query = Query.parse(event.view);
           navigateToQueryRef.current(query); // FIXME what about constraint
         }
-        if (update.search) {
-          dispatchRef.current(setSearch(apiToReduxSearch(update.search)));
+        if (event.search) {
+          assignSearch(searchRef.current, event.search);
+          dispatch(openTP());
+          dispatch(setSearch(searchRef.current));
         }
       } catch (err) {
-        onError(`console event: ${err}`);
+        onError(err);
       }
     };
     return consoleUpdates(onMessage, onError);
-  }, []); // No dependencies, use refs
+  }, [dispatch]);
 };
 
 export default useKorrel8r;

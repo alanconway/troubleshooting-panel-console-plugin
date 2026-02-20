@@ -27,7 +27,7 @@ import { usePluginAvailable } from '../hooks/usePluginAvailable';
 import { getGoalsGraph, getNeighborsGraph } from '../korrel8r-client';
 import * as api from '../korrel8r/client';
 import * as korrel8r from '../korrel8r/types';
-import { defaultSearch, Result, Search, SearchType, setResult, setSearch } from '../redux-actions';
+import { apiSearch, defaultSearch, Result, Search, setResult, setSearch } from '../redux-actions';
 import { State } from '../redux-reducers';
 import * as time from '../time';
 import { HelpPopover as FieldLevelHelp } from './HelpPopover';
@@ -49,37 +49,33 @@ export default function Korrel8rPanel() {
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
-  // On mount: if redux search has no query but locationQuery is available, set initial search.
+  // On mount: if no stored search, set initial search from locationQuery.
   React.useEffect(() => {
     if (!search?.queryStr && locationQuery) {
       dispatch(setSearch({ ...defaultSearch, queryStr: locationQuery.toString() }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // No dependencies, run on mount only.
 
+  // Execute the search asynchronously
   React.useEffect(() => {
-    const queryStr = search?.queryStr?.trim();
-    const start: api.Start = {
-      queries: queryStr ? [queryStr] : undefined,
-      constraint: search?.constraint?.toAPI() ?? undefined,
-    };
-    let cancelled = false; // Detect if returned cleanup function was called.
-    const onResult = (newResult: Result) => {
-      if (!cancelled) {
-        dispatch(setResult(newResult));
-      }
-    };
-    const fetch =
-      search.type === SearchType.Goal
-        ? getGoalsGraph({ start, goals: [search.goal] })
-        : getNeighborsGraph({ start, depth: search.depth });
+    let cancelled: boolean;
+    const params = apiSearch(search);
+    let fetch: api.CancelablePromise<api.Graph>;
+    if (params?.goals) fetch = getGoalsGraph(params.goals);
+    else if (params?.neighbors) fetch = getNeighborsGraph(params.neighbors);
+    else {
+      dispatch(setResult({ message: t('Missing parameters') })); // Empty result
+      return;
+    }
     fetch
-      .then((response: api.Graph) => onResult({ graph: new korrel8r.Graph(response) }))
-      .catch((e: api.ApiError) => {
-        onResult({
-          title: e?.body?.error ? t('Korrel8r Error') : t('Request Failed'),
-          message: e?.body?.error || e.message || 'Unknown Error',
-        });
+      .then((response: api.Graph) => {
+        dispatch(setResult({ graph: new korrel8r.Graph(response) }));
+      })
+      .catch((err: Error & api.ApiError) => {
+        if (cancelled) return;
+        const message = err?.body?.error || err?.message || t('unknown error');
+        dispatch(setResult({ message: message }));
       });
     return () => {
       cancelled = true;
@@ -90,19 +86,6 @@ export default function Korrel8rPanel() {
   const queryToggleID = 'query-toggle';
   const queryContentID = 'query-content';
   const queryInputID = 'query-input';
-
-  const runSearch = React.useCallback(
-    (newSearch: Search) => {
-      // Update constraint from time period
-      if (newSearch.period) {
-        const [start, end] = newSearch.period.startEnd();
-        newSearch.constraint = new korrel8r.Constraint({ ...newSearch.constraint, start, end });
-      }
-      newSearch.depth = Math.max(1, Math.min(newSearch.depth, 10));
-      dispatch(setSearch({ ...newSearch }));
-    },
-    [dispatch],
-  );
 
   const queryHelp = (
     <>
@@ -131,12 +114,12 @@ export default function Korrel8rPanel() {
       <Button
         isAriaDisabled={!locationQuery}
         onClick={() => {
-          runSearch({
-            ...defaultSearch,
-            queryStr: locationQuery?.toString(),
-            constraint: search?.constraint,
-            period: search?.period,
-          });
+          dispatch(
+            setSearch({
+              ...search,
+              queryStr: locationQuery?.toString(),
+            }),
+          );
         }}
       >
         {t('Focus')}
@@ -162,7 +145,7 @@ export default function Korrel8rPanel() {
       <Button
         isAriaDisabled={!search?.queryStr}
         onClick={() => {
-          runSearch(search);
+          dispatch(setSearch(search));
         }}
       >
         <SyncIcon />
@@ -183,9 +166,7 @@ export default function Korrel8rPanel() {
         <TimeRangeFormGroup
           label={t('Time')}
           period={search.period}
-          onChange={(period: time.Period): void => {
-            dispatch(setSearch({ ...search, period }));
-          }}
+          onChange={(period: time.Period) => dispatch(setSearch({ ...search, period }))}
           t={t}
         />
         <SearchFormGroup
@@ -203,7 +184,7 @@ export default function Korrel8rPanel() {
             onKeyDown={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                runSearch(search);
+                dispatch(setSearch(search));
               }
             }}
             placeholder="domain:class:selector (shift-enter for new line)"
@@ -272,12 +253,17 @@ const Topology: React.FC<TopologyProps> = ({ domains, result, t, constraint }) =
     );
   }
 
+  // eslint-disable-next-line no-console
+  console.error(`FIXME not loading`, result);
+
   return (
     <TopologyInfoState
-      titleText={result.title || t('No Correlated Signals Found')}
+      titleText={result.message ?
+        t('Correlation Error') : t('No Correlation Result')
+      }
       // Only display fisrt 400 characters of error to prevent repeating errors
-      text={result.message ? result.message.slice(0, 400) : t('Correlation result was empty.')}
-      isError={result.isError}
+      text={result?.message?.slice(0, 400) || ''}
+      isError={!!result.message}
     />
   );
 };

@@ -73,6 +73,7 @@ deploy:	test-frontend		## Build and push image, reinstall on cluster using helm.
 
 .PHONY: start-devspace-backend
 start-devspace-backend:
+
 	/opt/app-root/plugin-backend -port=9443 -cert=/var/serving-cert/tls.crt -key=/var/serving-cert/tls.key -plugin-config-path=/etc/plugin/config.yaml -static-path=/opt/app-root/web/dist -config-path=/opt/app-root/web/dist
 
 # Client generated from Korrel8r OpenAPI spec.

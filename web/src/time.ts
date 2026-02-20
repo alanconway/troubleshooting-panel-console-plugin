@@ -7,7 +7,7 @@ export interface Period {
   startEnd(): [Date, Date];
 }
 
-/** Duration is a count of some time unit (hours, days etc.) */
+/** Duration is a count of some time unit (hours, days etc.) up to now */
 export class Duration implements Period {
   constructor(public readonly count: number, public readonly unit: Unit) {}
   duration(): number {
@@ -70,3 +70,11 @@ export const copyTime = (to: Date, from: Date): Date => {
 
 // NOTE: Define our own isValidDate - don't import react modules in a plain .ts file.
 export const isValidDate = (date?: Date) => Boolean(date && !isNaN(date.valueOf()));
+
+// Returns a Duration if the end is close to the current time, a Range if not.
+export const periodFor = (start: Date, end: Date): Period => {
+  const lapse = Date.now() - end.getTime();
+  return lapse > 0 && lapse < MINUTE.value
+    ? new Duration((end.getTime() - start.getTime()) / 1000, SECOND)
+    : new Range(start, end);
+};

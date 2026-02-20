@@ -1,7 +1,7 @@
 import { action, ActionType as Action } from 'typesafe-actions';
-import { Search as APISearch } from './korrel8r/client';
+import * as api from './korrel8r/client';
 import { Constraint, Graph } from './korrel8r/types';
-import { DAY, Duration, Period } from './time';
+import { DAY, Duration, Period, periodFor } from './time';
 
 export enum ActionType {
   CloseTroubleshootingPanel = 'closeTroubleshootingPanel',
@@ -29,8 +29,6 @@ export type Search = {
 export type Result = {
   graph?: Graph;
   message?: string;
-  title?: string;
-  isError?: boolean;
 };
 
 // Default search parameters do a neighbourhood search of depth 3.
@@ -54,25 +52,40 @@ export const actions = {
 
 export type TPAction = Action<typeof actions>;
 
-/** Convert an API Search (from SSE messages) to a redux Search for the panel. */
-export function apiToReduxSearch(apiSearch: APISearch): Search {
-  if (apiSearch.neighbors) {
-    const { start, depth } = apiSearch.neighbors;
-    return {
-      type: SearchType.Distance,
-      depth,
-      queryStr: start?.queries?.[0],
-      constraint: start?.constraint ? Constraint.fromAPI(start.constraint) : undefined,
-    };
+/** Merge an API Search into a redux search. */
+export const assignSearch = (search: Search, apiSearch: api.Search) => {
+  if (!apiSearch?.neighbors && !apiSearch?.goals) return;
+  const { start } = apiSearch.goals || apiSearch.neighbors;
+  const constraint = start?.constraint && Constraint.fromAPI(start.constraint);
+  const period =
+    constraint?.start && constraint?.end && periodFor(constraint?.start, constraint?.end);
+  const update = {
+    type: apiSearch.goals ? SearchType.Goal : SearchType.Distance,
+    queryStr: start?.queries?.[0],
+    constraint: constraint,
+    period,
+    depth: apiSearch?.neighbors?.depth,
+    goals: apiSearch?.goals?.goals?.[0],
+  };
+  Object.assign(search, update);
+};
+
+/** Convert redux Search to an API Search. */
+export const apiSearch = (search: Search): api.Search => {
+  if (!search || !search.type) return {};
+  const queryStr = search.queryStr?.trim();
+  // Update constraint from period
+  if (search.period && search.constraint) {
+    [search.constraint.start, search.constraint.end] = search.period.startEnd();
   }
-  if (apiSearch.goals) {
-    const { start, goals } = apiSearch.goals;
-    return {
-      type: SearchType.Goal,
-      goal: goals?.[0],
-      queryStr: start?.queries?.[0],
-      constraint: start?.constraint ? Constraint.fromAPI(start.constraint) : undefined,
-    };
+  const start: api.Start = {
+    queries: queryStr && [queryStr],
+    constraint: search.constraint?.toAPI(),
+  };
+  switch (search.type) {
+    case SearchType.Goal:
+      return { goals: { start, goals: search.goal && [search.goal] } };
+    case SearchType.Distance:
+      return { neighbors: { start, depth: search.depth } };
   }
-  return {};
-}
+};

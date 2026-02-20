@@ -64,12 +64,13 @@ export class Constraint {
     Object.assign(this, args);
   }
 
-  static fromAPI(ac: api.Constraint): Constraint {
+  static fromAPI(constraint: api.Constraint): Constraint {
+    if (!constraint) return undefined;
     return new Constraint({
-      start: parseDate(ac?.start),
-      end: parseDate(ac?.end),
-      limit: ac?.limit || undefined,
-      timeoutNS: parseNumber(ac?.timeout),
+      start: parseDate(constraint.start),
+      end: parseDate(constraint.end),
+      limit: constraint?.limit || undefined,
+      timeoutNS: parseNumber(constraint?.timeout),
     });
   }
 

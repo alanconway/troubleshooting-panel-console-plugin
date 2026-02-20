@@ -73,8 +73,8 @@ export const eventStream = (
         }
       } catch (err) {
         if (controller.signal.aborted) return; // Exit on cancel
-        onError(err instanceof Error ? err : new Error(String(err)));
         backoff = Math.min(backoff * 2, maxDelay);
+        onError(err);
       }
       await delay(backoff);
     }

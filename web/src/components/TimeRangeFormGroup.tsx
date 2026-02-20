@@ -42,7 +42,8 @@ const TimeRangeFormGroup: React.FC<TimeRangeFormGroupProps> = ({
   defaultDuration = new time.Duration(1, time.DAY),
   defaultRange = new time.Range(...new time.Duration(1, time.DAY).startEnd()),
 }) => {
-  const type = period instanceof time.Duration ? RECENT : RANGE;
+  if (!period) period = defaultDuration;
+  const type = period instanceof time.Range ? RANGE : RECENT;
   const duration = type === RECENT ? (period as time.Duration) : defaultDuration;
   const range = type === RANGE ? (period as time.Range) : defaultRange;
 
@@ -72,7 +73,6 @@ const TimeRangeFormGroup: React.FC<TimeRangeFormGroupProps> = ({
     </Flex>
   );
 
-  // FXIME allow blank, -toggle.
   const rangePicker = (
     <>
       <DateTimePicker
