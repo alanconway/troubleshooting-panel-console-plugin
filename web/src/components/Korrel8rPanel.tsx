@@ -64,7 +64,14 @@ export default function Korrel8rPanel() {
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
+  // Skip the first fetch if we already have a stored result.
+  const useStoredResult = React.useRef(result != null);
+
   React.useEffect(() => {
+    if (useStoredResult.current) {
+      useStoredResult.current = false; // Fetch a new result next time.
+      return;
+    }
     // eslint-disable-next-line no-console
     console.debug('korrel8r search', search);
     const queryStr = search?.queryStr?.trim();
