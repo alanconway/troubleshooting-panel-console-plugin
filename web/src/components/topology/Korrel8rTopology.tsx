@@ -223,29 +223,49 @@ export const Korrel8rTopology: React.FC<{
     return controller;
   }, [controller, selectionAction, componentFactory]);
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => controller.getGraph().fit(PADDING), 150);
+    });
+    observer.observe(element);
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [controller]);
+
   return (
-    <TopologyView
-      controlBar={
-        <TopologyControlBar
-          controlButtons={createTopologyControlButtons({
-            ...defaultControlButtonsOptions,
-            zoomInCallback: action(() => {
-              controller.getGraph().scaleBy(4 / 3);
-            }),
-            zoomOutCallback: action(() => {
-              controller.getGraph().scaleBy(0.75);
-            }),
-            fitToScreenCallback: action(() => {
-              controller.getGraph().fit(PADDING);
-            }),
-            legend: false,
-          })}
-        />
-      }
-    >
-      <VisualizationProvider controller={controller2}>
-        <VisualizationSurface state={{ selectedIds }} />
-      </VisualizationProvider>
-    </TopologyView>
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <TopologyView
+        controlBar={
+          <TopologyControlBar
+            controlButtons={createTopologyControlButtons({
+              ...defaultControlButtonsOptions,
+              zoomInCallback: action(() => {
+                controller.getGraph().scaleBy(4 / 3);
+              }),
+              zoomOutCallback: action(() => {
+                controller.getGraph().scaleBy(0.75);
+              }),
+              fitToScreen: false, // Same thing as resetView
+              resetViewCallback: action(() => {
+                controller.getGraph().reset();
+                controller.getGraph().layout();
+              }),
+              legend: false,
+            })}
+          />
+        }
+      >
+        <VisualizationProvider controller={controller2}>
+          <VisualizationSurface state={{ selectedIds }} />
+        </VisualizationProvider>
+      </TopologyView>
+    </div>
   );
 };

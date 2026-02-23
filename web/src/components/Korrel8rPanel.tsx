@@ -13,6 +13,8 @@ import {
   Form,
   FormGroup,
   Spinner,
+  Stack,
+  StackItem,
   TextArea,
   Title,
   Tooltip,
@@ -226,18 +228,18 @@ export default function Korrel8rPanel() {
 
   return (
     <>
-      <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+      <Stack>
         <Flex className="tp-plugin__panel-query-container" direction={{ default: 'row' }}>
           {focusButton}
           <FlexItem align={{ default: 'alignRight' }}>{advancedToggle}</FlexItem>
           {refreshButton}
         </Flex>
-        <FlexItem>{advancedSection}</FlexItem>
+        {advancedSection}
         <Divider />
-        <FlexItem className="tp-plugin__panel-topology-container" grow={{ default: 'grow' }}>
+        <StackItem className="tp-plugin__panel-topology-container" isFilled={true}>
           {topologySection}
-        </FlexItem>
-      </Flex>
+        </StackItem>
+      </Stack>
     </>
   );
 }
