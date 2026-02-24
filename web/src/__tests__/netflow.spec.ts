@@ -47,7 +47,8 @@ describe('NetflowNode.fromQuery', () => {
       url: `netflow-traffic?tenant=network&filters=${encodeURIComponent(
         'dst_kind=Pod;src_namespace="openshift-oauth-apiserver","tracing-app-k6"',
       )}&startTime=1742896800&endTime=1742940000`,
-      query: 'netflow:network:{DstK8S_Type="Pod",SrcK8S_Namespace=~"openshift-oauth-apiserver|tracing-app-k6"}',
+      query:
+        'netflow:network:{DstK8S_Type="Pod",SrcK8S_Namespace=~"openshift-oauth-apiserver|tracing-app-k6"}',
       constraint: {
         start: '2025-03-25T10:00:00.000Z',
         end: '2025-03-25T22:00:00.000Z',
@@ -77,7 +78,8 @@ describe('NetflowNode.fromURL', () => {
       url: `netflow-traffic?tenant=network&filters=${encodeURIComponent(
         'dst_kind=Pod;dst_namespace=hostpath-provisioner;src_namespace="openshift-oauth-apiserver","tracing-app-k6"',
       )}`,
-      query: 'netflow:network:{DstK8S_Type="Pod",DstK8S_Namespace="hostpath-provisioner",SrcK8S_Namespace=~"openshift-oauth-apiserver|tracing-app-k6"}',
+      query:
+        'netflow:network:{DstK8S_Type="Pod",DstK8S_Namespace="hostpath-provisioner",SrcK8S_Namespace=~"openshift-oauth-apiserver|tracing-app-k6"}',
     },
   ])(`from $url`, ({ query, url }) =>
     expect(new NetflowDomain().linkToQuery(new URIRef(url))).toEqual(Query.parse(query)),
