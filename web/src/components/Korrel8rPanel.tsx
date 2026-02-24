@@ -13,6 +13,8 @@ import {
   Form,
   FormGroup,
   Spinner,
+  Stack,
+  StackItem,
   TextArea,
   Title,
   Tooltip,
@@ -24,8 +26,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLocationQuery } from '../hooks/useLocationQuery';
 import { usePluginAvailable } from '../hooks/usePluginAvailable';
 import { getGoalsGraph, getNeighborsGraph } from '../korrel8r-client';
-import { AlertDomain } from '../korrel8r/alert';
-import { allDomains } from '../korrel8r/all-domains';
 import * as api from '../korrel8r/client';
 import * as korrel8r from '../korrel8r/types';
 import {
@@ -51,16 +51,7 @@ export default function Korrel8rPanel() {
   });
   const dispatch = useDispatch();
 
-  const alertRules = useSelector((state: State) => state.observe?.get('rules'));
-  const alertIDs = React.useMemo(() => {
-    if (!alertRules) return new Map<string, string>();
-    return new Map<string, string>(alertRules.map(({ id, name }) => [id, name]));
-  }, [alertRules]);
-  const domains = React.useMemo(
-    () => new korrel8r.Domains(...allDomains, new AlertDomain(alertIDs)),
-    [alertIDs],
-  );
-  const locationQuery = useLocationQuery(domains);
+  const locationQuery = useLocationQuery();
 
   // Search parameters.
   const [search, setSearch] = React.useState<Search>({
@@ -73,7 +64,14 @@ export default function Korrel8rPanel() {
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
+  // Skip the first fetch if we already have a stored result.
+  const useStoredResult = React.useRef(result != null);
+
   React.useEffect(() => {
+    if (useStoredResult.current) {
+      useStoredResult.current = false; // Fetch a new result next time.
+      return;
+    }
     // eslint-disable-next-line no-console
     console.debug('korrel8r search', search);
     const queryStr = search?.queryStr?.trim();
@@ -232,42 +230,35 @@ export default function Korrel8rPanel() {
   );
 
   const topologySection = (
-    <Topology
-      domains={domains}
-      result={result}
-      constraint={search.constraint}
-      t={t}
-      setSearch={setSearch}
-    />
+    <Topology result={result} constraint={search.constraint} t={t} setSearch={setSearch} />
   );
 
   return (
     <>
-      <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+      <Stack>
         <Flex className="tp-plugin__panel-query-container" direction={{ default: 'row' }}>
           {focusButton}
           <FlexItem align={{ default: 'alignRight' }}>{advancedToggle}</FlexItem>
           {refreshButton}
         </Flex>
-        <FlexItem>{advancedSection}</FlexItem>
+        {advancedSection}
         <Divider />
-        <FlexItem className="tp-plugin__panel-topology-container" grow={{ default: 'grow' }}>
+        <StackItem className="tp-plugin__panel-topology-container" isFilled={true}>
           {topologySection}
-        </FlexItem>
-      </Flex>
+        </StackItem>
+      </Stack>
     </>
   );
 }
 
 interface TopologyProps {
-  domains: korrel8r.Domains;
   result?: Result;
   constraint: korrel8r.Constraint;
   t: TFunction;
   setSearch: (search: Search) => void;
 }
 
-const Topology: React.FC<TopologyProps> = ({ domains, result, t, constraint }) => {
+const Topology: React.FC<TopologyProps> = ({ result, t, constraint }) => {
   const [loggingAvailable, loggingAvailableLoading] = usePluginAvailable('logging-view-plugin');
   const [netobserveAvailable, netobserveAvailableLoading] = usePluginAvailable('netobserv-plugin');
 
@@ -280,7 +271,6 @@ const Topology: React.FC<TopologyProps> = ({ domains, result, t, constraint }) =
     // Non-empty graph
     return (
       <Korrel8rTopology
-        domains={domains}
         graph={result.graph}
         loggingAvailable={loggingAvailable}
         netobserveAvailable={netobserveAvailable}
