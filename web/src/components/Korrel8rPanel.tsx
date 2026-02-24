@@ -13,6 +13,8 @@ import {
   Form,
   FormGroup,
   Spinner,
+  Stack,
+  StackItem,
   TextArea,
   Title,
   Tooltip,
@@ -62,7 +64,14 @@ export default function Korrel8rPanel() {
   // Showing advanced query
   const [showQuery, setShowQuery] = React.useState(false);
 
+  // Skip the first fetch if we already have a stored result.
+  const useStoredResult = React.useRef(result != null);
+
   React.useEffect(() => {
+    if (useStoredResult.current) {
+      useStoredResult.current = false; // Fetch a new result next time.
+      return;
+    }
     // eslint-disable-next-line no-console
     console.debug('korrel8r search', search);
     const queryStr = search?.queryStr?.trim();
@@ -226,18 +235,18 @@ export default function Korrel8rPanel() {
 
   return (
     <>
-      <Flex direction={{ default: 'column' }} grow={{ default: 'grow' }}>
+      <Stack>
         <Flex className="tp-plugin__panel-query-container" direction={{ default: 'row' }}>
           {focusButton}
           <FlexItem align={{ default: 'alignRight' }}>{advancedToggle}</FlexItem>
           {refreshButton}
         </Flex>
-        <FlexItem>{advancedSection}</FlexItem>
+        {advancedSection}
         <Divider />
-        <FlexItem className="tp-plugin__panel-topology-container" grow={{ default: 'grow' }}>
+        <StackItem className="tp-plugin__panel-topology-container" isFilled={true}>
           {topologySection}
-        </FlexItem>
-      </Flex>
+        </StackItem>
+      </Stack>
     </>
   );
 }
