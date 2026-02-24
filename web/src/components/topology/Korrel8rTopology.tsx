@@ -107,7 +107,7 @@ export const Korrel8rTopology: React.FC<{
       graph.nodes.map((node: korrel8r.Node) => {
         if (node.error) {
           // eslint-disable-next-line no-console
-          console.error(node.error);
+          console.warn(`korrel8r node: ${node.error}`);
           node.error = t('Unable to find Console Link');
         } else if (node.class.domain === 'log' && !loggingAvailable) {
           node.error = t('Logging Plugin Disabled');

@@ -12,6 +12,6 @@ export const useLocationQuery = (): Query | undefined => {
     return q;
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.error('useLocation', e);
+    console.warn(`korrel8r useLocationQuery: ${e}`);
   }
 };

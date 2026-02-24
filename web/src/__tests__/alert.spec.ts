@@ -41,7 +41,7 @@ describe('AlertNode.fromURL raises error', () => {
   it.each([
     {
       url: 'monitoring/alertrules/999',
-      error: 'invalid link for domain alert: monitoring/alertrules/999: cannot find alertname',
+      error: 'unknown alert link: monitoring/alertrules/999: cannot find alertname',
     },
   ])('converts $url', ({ url, error }) => {
     expect(() => new AlertDomain().linkToQuery(new URIRef(url))).toThrow(error);
