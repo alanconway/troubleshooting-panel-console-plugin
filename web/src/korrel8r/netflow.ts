@@ -47,7 +47,7 @@ export class NetflowDomain extends Domain {
         const quotedValues = value?.match(/"([^"]+)"/g);
         if (quotedValues && quotedValues.length > 1) {
           // Extract the actual values (remove quotes)
-          const values = quotedValues.map(v => v.slice(1, -1));
+          const values = quotedValues.map((v) => v.slice(1, -1));
           // Convert to LogQL regex syntax with OR operator
           return `${linkToQueryName[key]}=~"${values.join('|')}"`;
         }
@@ -78,7 +78,10 @@ export class NetflowDomain extends Domain {
         if (queryToURLName[key]) {
           // If operator is =~ and value contains |, convert to comma-separated quoted format
           if (operator === '=~' && value.includes('|')) {
-            const values = value.split('|').map(v => `"${v}"`).join(',');
+            const values = value
+              .split('|')
+              .map((v) => `"${v}"`)
+              .join(',');
             return `${queryToURLName[key]}=${values}`;
           }
           return `${queryToURLName[key]}${operator}${value}`;
