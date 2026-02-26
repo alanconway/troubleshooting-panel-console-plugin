@@ -15,14 +15,12 @@ export const useNavigateToQuery = () => {
     (query: korrel8r.Query, constraint: korrel8r.Constraint) => {
       try {
         let link = domains.queryToLink(query, constraint)?.toString();
-        // eslint-disable-next-line no-console
-        console.debug(`korrel8r navigateToQuery ${query}, ${constraint} => ${link}`);
         if (!link) return;
         if (!link.startsWith('/')) link = '/' + link;
         navigate(link);
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error(`korrel8r navigateToQuery ${query}, ${constraint}: error: ${e}`);
+        console.warn(`korrel8r navigateToQuery: ${e}`);
       }
     },
     [navigate, domains],
