@@ -1,76 +1,66 @@
+// Must be set before imports that trigger SDK module loading.
+window['SERVER_FLAGS'] = { basePath: '/' };
+
+import { K8sModel } from '@openshift-console/dynamic-plugin-sdk';
 import { K8sDomain } from '../korrel8r/k8s';
 import { Query, URIRef } from '../korrel8r/types';
 
-const k8s = new K8sDomain();
+const models = {
+  // Mock API discovery resource models.
+  'core~v1~Pod': {
+    kind: 'Pod',
+    apiVersion: 'v1',
+    plural: 'pods',
+  },
+  'apps~v1~Deployment': {
+    kind: 'Deployment',
+    apiVersion: 'v1',
+    apiGroup: 'apps',
+    plural: 'deployments',
+    verbs: ['watch'],
+  },
+  'core~v1~Event': {
+    kind: 'Event',
+    apiVersion: 'v1',
+    plural: 'events',
+  },
+  'events.k8s.io~v1~Event': {
+    kind: 'Event',
+    apiVersion: 'v1',
+    apiGroup: 'events.k8s.io',
+    plural: 'events',
+  },
+  'core~v1~Namespace': {
+    kind: 'Namespace',
+    apiVersion: 'v1',
+    plural: 'namespaces',
+  },
+  'config.openshift.io~v1~Node': {
+    kind: 'Node',
+    apiGroup: 'config.openshift.io',
+    apiVersion: 'v1',
+    plural: 'nodes',
+  },
+  'core~v1~Node': {
+    kind: 'Node',
+    apiVersion: 'v1',
+    plural: 'nodes',
+  },
+  'rbac.authorization.k8s.io~v1~Role': {
+    kind: 'Role',
+    apiVersion: 'v1',
+    apiGroup: 'rbac.authorization.k8s.io',
+    plural: 'roles',
+  },
+  'operators.coreos.com~v1alpha1~ClusterServiceVersion': {
+    kind: 'ClusterServiceVersion',
+    apiVersion: 'v1alpha1',
+    apiGroup: 'operators.coreos.com',
+    plural: 'operators',
+  },
+} as unknown as { [ke8: string]: K8sModel };
 
-beforeAll(() => {
-  // Mock API discovery resources.
-  const resources = {
-    consoleVersion: 'x.y.z',
-    models: [
-      {
-        kind: 'Pod',
-        apiVersion: 'v1',
-        path: 'pods',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Deployment',
-        apiVersion: 'v1',
-        apiGroup: 'apps',
-        path: 'deployments',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Event',
-        apiVersion: 'v1',
-        path: 'events',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Event',
-        apiVersion: 'v1',
-        apiGroup: 'events.k8s.io',
-        path: 'events',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Namespace',
-        apiVersion: 'v1',
-        path: 'namespaces',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Node',
-        apiVersion: 'v1',
-        path: 'nodes',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Role',
-        apiVersion: 'v1',
-        apiGroup: 'rbac.authorization.k8s.io',
-        path: 'roles',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'Pod',
-        apiVersion: 'v1',
-        path: 'pods',
-        verbs: ['watch'],
-      },
-      {
-        kind: 'ClusterServiceVersion',
-        apiVersion: 'v1alpha1',
-        apiGroup: 'operators.coreos.com',
-        path: 'operators',
-        verbs: ['watch'],
-      },
-    ],
-  };
-  localStorage.setItem('bridge/api-discovery-resources', JSON.stringify(resources));
-  window['SERVER_FLAGS'] = { consoleVersion: 'x.y.z' };
-});
+const k8s = new K8sDomain(models);
 
 describe('K8sDomain.linkToQuery', () => {
   it.each([
