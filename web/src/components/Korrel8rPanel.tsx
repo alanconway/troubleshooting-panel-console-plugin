@@ -130,17 +130,17 @@ export default function Korrel8rPanel() {
     cancelRef.current = cancel;
     const anotherFetchIsRunning = () => cancelRef.current !== cancel;
     fetch
-      .then((response: api.Graph) => {
+      .then(({ data }) => {
         if (anotherFetchIsRunning()) return;
         dispatchResult(
-          Array.isArray(response?.nodes) && response.nodes.length > 0
-            ? { graph: new korrel8r.Graph(response) }
+          Array.isArray(data?.nodes) && data.nodes.length > 0
+            ? { graph: new korrel8r.Graph(data) }
             : { title: t('Empty Result'), message: t('No correlated data found') },
         );
       })
-      .catch((e) => {
+      .catch((err) => {
         if (anotherFetchIsRunning()) return;
-        if (e instanceof api.CancelError) {
+        if (err instanceof Error && err.name === 'AbortError') {
           dispatchResult({
             title: t('Canceled'),
             message: t('Search was interrupted'),
@@ -148,8 +148,8 @@ export default function Korrel8rPanel() {
           });
         } else {
           dispatchResult({
-            title: e?.body?.error ? t('Search Error') : t('Search Failed'),
-            message: e?.body?.error || e.message || 'Unknown Error',
+            title: err?.body?.error ? t('Search Error') : t('Search Failed'),
+            message: err?.body?.error || err.message || 'Unknown Error',
             isError: true,
           });
         }

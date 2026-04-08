@@ -5,6 +5,9 @@ ORG         ?= openshift-observability-ui
 IMAGE       ?= quay.io/${ORG}/troubleshooting-panel-console-plugin:${VERSION}
 TAG         ?= $(VERSION)
 
+KORREL8R_SPEC=korrel8r/korrel8r-openapi.yaml
+KORREL8R_CLIENT=web/src/korrel8r/client
+
 .PHONY: all
 all: build-frontend build-backend test-frontend
 
@@ -32,7 +35,7 @@ install-frontend-ci-clean: install-frontend-ci
 	cd web && npm cache clean --force
 
 .PHONY: build-frontend
-build-frontend: lint-frontend
+build-frontend: $(KORREL8R_CLIENT) lint-frontend
 	cd web && npm run i18n && npm run build
 
 .PHONY: start-frontend
@@ -80,12 +83,10 @@ deploy:	test-frontend		## Build and push image, reinstall on cluster using helm.
 start-devspace-backend:
 	/opt/app-root/plugin-backend -port=9443 -cert=/var/serving-cert/tls.crt -key=/var/serving-cert/tls.key -plugin-config-path=/etc/plugin/config.yaml -static-path=/opt/app-root/web/dist -config-path=/opt/app-root/web/dist
 
-## Code generation
-gen-client: web/src/korrel8r/client
-
-# NOTE: copied from https://github.com/korrel8r/korrel8r/blob/main/pkg/rest/docs/swagger.json
-web/src/korrel8r/client: korrel8r/swagger.json
-	cd web && npx openapi-typescript-codegen --indent 2 --input ../$< --output ../$@ --name Korrel8rClient
+# Client generated from Korrel8r OpenAPI spec.
+# https://github.com/korrel8r/korrel8r/blob/main/pkg/rest/docs/korrel8r-openapi.yaml
+$(KORREL8R_CLIENT): $(KORREL8R_SPEC)
+	cd web && npx @hey-api/openapi-ts --input ../$< --output ../$@
 	@touch $@
 
 .PHONY: podman-cross-build
